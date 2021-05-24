@@ -7,6 +7,7 @@ import './assets/fonts/iconfont.css'
 import axios from 'axios'
 import lang from 'element-ui/lib/locale/lang/en'
 import locale from 'element-ui/lib/locale'
+import TreeTable from 'vue-table-with-tree-grid'
 
 locale.use(lang)
 
@@ -17,6 +18,7 @@ axios.interceptors.request.use(config => {
 })
 Vue.prototype.$http = axios
 Vue.config.productionTip = false
+Vue.component('tree-table', TreeTable)
 
 new Vue({
 	router,

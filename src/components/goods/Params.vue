@@ -32,7 +32,35 @@
             >Add Parameters</el-button
           >
           <el-table :data="manyTableData" border stripe>
-            <el-table-column type="expand"></el-table-column>
+            <el-table-column type="expand">
+              <template slot-scope="scope">
+                <el-tag
+                  v-for="(item, i) in scope.row.attr_vals"
+                  :key="i"
+                  closable
+                  @close="handleClose(i, scope.row)"
+                >
+                  {{ item }}
+                </el-tag>
+                <el-input
+                  class="input-new-tag"
+                  v-if="scope.row.inputVisible"
+                  v-model="scope.row.inputValue"
+                  ref="saveTagInput"
+                  size="small"
+                  @keyup.enter.native="handleInputConfirm(scope.row)"
+                  @blur="handleInputConfirm(scope.row)"
+                >
+                </el-input>
+                <el-button
+                  v-else
+                  class="button-new-tag"
+                  size="small"
+                  @click="showInput(scope.row)"
+                  >+ New Tag</el-button
+                >
+              </template>
+            </el-table-column>
             <el-table-column type="index"></el-table-column>
             <el-table-column
               label="Parameter"
@@ -67,7 +95,35 @@
             >Add Attributes</el-button
           >
           <el-table :data="onlyTableData" border stripe>
-            <el-table-column type="expand"></el-table-column>
+            <el-table-column type="expand">
+              <template slot-scope="scope">
+                <el-tag
+                  v-for="(item, i) in scope.row.attr_vals"
+                  :key="i"
+                  closable
+                  @close="handleClose(i, scope.row)"
+                >
+                  {{ item }}
+                </el-tag>
+                <el-input
+                  class="input-new-tag"
+                  v-if="scope.row.inputVisible"
+                  v-model="scope.row.inputValue"
+                  ref="saveTagInput"
+                  size="small"
+                  @keyup.enter.native="handleInputConfirm(scope.row)"
+                  @blur="handleInputConfirm(scope.row)"
+                >
+                </el-input>
+                <el-button
+                  v-else
+                  class="button-new-tag"
+                  size="small"
+                  @click="showInput(scope.row)"
+                  >+ New Tag</el-button
+                >
+              </template>
+            </el-table-column>
             <el-table-column type="index"></el-table-column>
             <el-table-column
               label="Parameter"
@@ -200,6 +256,8 @@ export default {
     async getParamsData() {
       if (this.selectedCateKeys.length !== 3) {
         this.selectedCateKeys = [];
+        this.manyTableData = [];
+        this.onlyTableData = [];
         return;
       }
       const { data: res } = await this.$http.get(
@@ -209,7 +267,12 @@ export default {
         }
       );
       if (res.meta.status !== 200)
-        return this.$message.error("获取参数列表失败！");
+        return this.$message.error("Fail to get prameter list");
+      res.data.forEach((item) => {
+        item.attr_vals = item.attr_vals ? item.attr_vals.split(" ") : [];
+        item.inputVisible = false;
+        item.inputValue = "";
+      });
       if (this.activeName === "many") {
         this.manyTableData = res.data;
       } else {
@@ -294,6 +357,41 @@ export default {
       this.$message.success("Parameter Deleted");
       this.getParamsData();
     },
+    handleInputConfirm(row) {
+      if (row.inputValue.trim().length === 0) {
+        row.inputValue = "";
+        row.inputVisible = false;
+        return;
+      }
+      row.attr_vals.push(row.inputValue.trim());
+      row.inputValue = "";
+      row.inputVisible = false;
+      this.saveAttrVals(row);
+    },
+    async saveAttrVals(row) {
+      const { data: res } = await this.$http.put(
+        `categories/${this.cateId}/attributes/${row.attr_id}`,
+        {
+          attr_name: row.attr_name,
+          attr_sel: row.attr_sel,
+          attr_vals: row.attr_vals.join(" "),
+        }
+      );
+      if (res.meta.status !== 200) {
+        return this.$message.error("Fail to edit parameter");
+      }
+      this.$message.success("Parameter Updated");
+    },
+    showInput(row) {
+      row.inputVisible = true;
+      this.$nextTick((_) => {
+        this.$refs.saveTagInput.$refs.input.focus();
+      });
+    },
+    handleClose(i, row) {
+      row.attr_vals.splice(i, 1);
+      this.saveAttrVals(row);
+    },
   },
   computed: {
     isBtnDisabled() {
@@ -316,5 +414,13 @@ export default {
 <style Lang="less" scoped>
 .cat_opt {
   margin: 15px 0;
+}
+
+.el-tag {
+  margin: 10px;
+}
+
+.input-new-tag {
+  width: 120px;
 }
 </style>

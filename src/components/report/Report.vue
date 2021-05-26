@@ -61,7 +61,6 @@ export default {
     if (res.meta.status !== 200) {
       return this.$message.error("Fail to get chart");
     }
-    console.log("aaaa");
     const result = _.merge(res.data, this.options);
     myChart.setOption(result);
   },
